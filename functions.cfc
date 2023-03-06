@@ -169,6 +169,6 @@
                 </cfquery>
 	        </cfif>
         </cfloop>
-
+ 
     </cffunction>
 </cfcomponent>
