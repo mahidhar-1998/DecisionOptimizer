@@ -1,89 +1,91 @@
-<style>
-    #DOLlink{
-        cursor:pointer;
-        font-size:20px;
-        color:#005189
-    }
-    #AnalysisDataDiv{
-        margin-top:1.5% !important;
-    }
-	.fa-info-circle{
-		font-size:18px;
-	}
-</style>
-<cfoutput>
-    <div class="row">
-        <div class="col-md-6">
-        	<a href="javascript:void(0);" onClick="saveDecisionAnalysis();" id="DOLlink">Run decision Optimizer(Required)</a>
-			<i class="fa fa-info-circle fa-1x" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="Run Decision Optimizer"></i>
-        </div>
-    </div>
-    <div id="AnalysisDataDiv"></div>
-    <div class="row footer-row">
-        <div class="col-md-6">
-            <input type="button"  name="" id="saveAndExit" value="Save & Exit" class="saveAndExit" onclick='javascript:location.href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/CMS/ClientBridge/ClientBridgeSearchData.cfm?prospect=Y"' class="saveAndExit">
-            <input type="button"   name="cancelAndExit" id="cancelAndExit" value="Cancel & Exit" class="cancelAndExit" onclick='javascript:location.href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/CMS/ClientBridge/ClientBridgeSearchData.cfm?prospect=Y"' class="saveAndExit">			 
-        </div>
-        <div class="col-md-6">
-            <input type="button"  name="btnBack" id="btnBack"  	
-			<cfif (session.source EQ 'REP' AND session.TargetAccountNumber NEQ '') OR session.Source EQ "Subsequent Checks" >
-				onclick='javascript:location. href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/RegBI/sales/sales-main.cfm?step=5&OEUUID=#variables.OEUUID#&LStep=1"'
-			<cfelseif session.MaintenanceForms Eq "yes">
-				onclick='javascript:location.href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/CMS/ClientBridge/ClientBridgeSearchData.cfm?prospect=Y"'
-			<cfelse>
-				onclick='javascript:location. href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/RegBI/sales/sales-main.cfm?step=7&OEUUID=#variables.OEUUID#&LStep=1"'
-			</cfif>
-			 value="Back" class="btnBack btnAction" >		
-            <input type="button" name="btnSave" id="btnSave"  
-			<cfif (session.source EQ 'REP' AND session.TargetAccountNumber NEQ '') OR session.Source EQ "Subsequent Checks">
-				onclick='javascript:location. href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/RegBI/sales/sales-main.cfm?step=5&OEUUID=#variables.OEUUID#&LStep=3"'
-			<cfelseif session.MaintenanceForms Eq "yes">
-				onclick='javascript:location.href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/CMS/ClientBridge/ClientBridgeSearchData.cfm?prospect=Y"'
-			<cfelse>
-				onclick='javascript:location. href="https://#GetToken(cgi.server_name, 1, ".")#.planmemberpartners.com/RegBI/sales/sales-main.cfm?step=7&OEUUID=#variables.OEUUID#&LStep=3"'
-			</cfif>
-			value="Next" class="btnSave btnAction">
-        </div>		
-    </div>
-    <input type="hidden" id="OEUUID" value="#url.OEUUID#">
-</cfoutput>
+<cfloop query="attachedOES">
+	<div class="row associatedOES" id="oes#VAL(attachedOES.currentRow)#">
+		<div class="col-sm-3">
+			<div class="input-group">
+				<input type="text"
+					class="form-control form-control-md OESID"
+					name="OESID"
+					autocomplete="false"
+					placeholder="OES ID"
+					<cfif VAL(attachedOES.OESID) GT 0>
+						value="#VAL(attachedOES.OESID)#"
+						readonly="true"
+					</cfif>
+					onKeyPress="oesHint(this);"
+					onKeyUp="return numbersOnly(this);"
+					onblur="checkOES(this);">
+				<span class="clickable input-group-text oesBtn<cfif VAL(attachedOES.OESID) EQ 0> d-none</cfif>"
+					onClick="oesInfo(this)">
+					<span class="fas fa-check"></span>
+				</span>
+			</div>
+		</div>
+		<div class="col-sm-<cfif VAL(attachedOES.ref) EQ 0>7<cfelse>9</cfif>">
+			<input type="text"
+				class="form-control form-control-md"
+				name="OESNotes"
+				placeholder="Notes"
+				<cfif VAL(attachedOES.ref) GT 0>
+					readonly="true"
+				</cfif>
+				value="#TRIM(attachedOES.notes)#">
+		</div>
+		<cfif VAL(url.requestID) EQ 0 AND VAL(attachedOES.ref) EQ 0>
+			<div class="col-sm-2">
+				<span class="input-group-btn">
+					<button class="btn btn-default btn-outline-secondary dupButton" type="button" onClick="duplicateInfo('associatedOES');">
+						<span class="fas fa-plus"></span>
+					</button>
+					<button class="btn btn-default btn-outline-danger deleteButton d-none"
+						type="button"
+						onClick="deleteDiv($('##oes#VAL(attachedOES.currentRow)#'),'associatedOES')">
+						<span class="fas fa-times"></span>
+					</button>
+				</span>
+			</div>
+		</cfif>
+	</div>
+</cfloop>
 <script>
-    function saveDecisionAnalysis(){
-	let OEUUID = $('#OEUUID').val();
-	SSO_FI360_request();
-	$.ajax({
-		url: '../Objects/onlineEnrollmentDAO.cfc?method=setAnalysisDecisionDate',
-		data: {
-			OEUUID: OEUUID
-		},
-		type: 'post',
-		async: false,
-		success: function()
-		{
-			console.log('Decision Date Updated');
-		}
-	});
-	saveDecisionAnalysisDataLoad();
-}
-function saveDecisionAnalysisDataLoad(){
-	let OEUUID = $('#OEUUID').val();
-	let loadURL='';
-	if(typeof OEUUID !== 'undefined' && OEUUID !== '' && OEUUID !== null){
-		loadURL='/RegBI/templates/DecisionOptimizer.cfm?OEUUID='+OEUUID;
-	}
-	console.log(loadURL);
-	if(loadURL){
-		$.get(loadURL,function( data ) {
-			$('#AnalysisDataDiv').html(data);
+function duplicateInfo(objClass) { // duplicate object by parent class
+	var lastObj = $('.' + objClass).first();
+	var newObj = $(lastObj).clone();
+	var dupIdentifier = "_dup_";
+	var newID = makeID();
+	
+	$('#' + $(lastObj).attr('id') + ' .dupButton').addClass('d-none');
+	$('#' + $(lastObj).attr('id') + ' .deleteButton').removeClass('d-none');
+
+	$(newObj).attr('id',newID).insertAfter(lastObj);
+	
+	// find each input or select item and renames with a new ID
+	$(newObj).find('input').each(function(){
+		$(this).val('');
 		});
-	}else{
-		console.log('Error: No page load');
-	}		
+	$(newObj).find('select').each(function(){
+		$(this).val('');
+		});
+		
+	var deleteFunction =  "deleteDiv($('#" + newID + "'),'" + objClass + "');";
+	$('#' + newID + ' .deleteButton').unbind('click').attr('onclick',deleteFunction).removeClass('d-none');
+	
+	return newObj;
 }
-function SSO_FI360_request()
-{
-	let OEUUID = $('#OEUUID').val();
-	let url = '/SSO/Broadridge/BroadridgeSSO.cfm';
-	window.open( url + "?oeuuid=" + OEUUID, "_blank");
+
+function deleteDiv(obj,objClass) { // remove duplicated fields
+	$(obj).remove();
+	$('.' + objClass + ' .dupButton').last().removeClass('d-none');
+	if ($('.' + objClass).length == 1) {
+		$('.' + objClass + ' .deleteButton').addClass('d-none');
+		$('.' + objClass + ' .dupButton').removeClass('d-none');
+	}
+}
+
+function makeID() { // creates a random string used for dup fields
+	var randomID = "";
+	var possible = "0123456789";
+	for( var i=0; i < 20; i++ )
+		randomID += possible.charAt(Math.floor(Math.random() * possible.length));
+    return randomID;
 }
 </script>
